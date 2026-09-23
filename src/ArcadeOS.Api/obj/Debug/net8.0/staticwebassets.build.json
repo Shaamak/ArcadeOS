@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "H4lu95jyARcVNEgneU9cAc+MzA16OZQeJIPYC9eeNZw=",
+  "Source": "ArcadeOS.Api",
+  "BasePath": "_content/ArcadeOS.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
