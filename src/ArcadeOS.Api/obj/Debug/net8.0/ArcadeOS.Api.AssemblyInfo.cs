@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArcadeOS.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2c27f15452dd85ee520971089475243ec363d576")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4ec3bb98bad65dbcf4ee2464529e3f7493d6d83f")]
 [assembly: System.Reflection.AssemblyProductAttribute("ArcadeOS.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArcadeOS.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
