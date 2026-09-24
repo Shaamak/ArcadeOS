@@ -22,9 +22,58 @@ public class ArcadeDbContext : DbContext
     // You can query it like: _db.Users.Where(u => u.IsActive).ToListAsync()
     public DbSet<AppUser> Users => Set<AppUser>();
 
+    // DbSet = represents the "customers" table in PostgreSQL.
+    public DbSet<Customer> Customers => Set<Customer>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // --- Customer table configuration ---
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.ToTable("customers");
+
+            entity.HasKey(c => c.Id);
+
+            entity.Property(c => c.Id)
+                .HasColumnName("id");
+
+            entity.Property(c => c.FirstName)
+                .HasColumnName("first_name")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(c => c.LastName)
+                .HasColumnName("last_name")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(c => c.Email)
+                .HasColumnName("email")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            // Unique constraint on Email
+            entity.HasIndex(c => c.Email)
+                .IsUnique();
+
+            entity.Property(c => c.Phone)
+                .HasColumnName("phone")
+                .HasMaxLength(20);
+
+            entity.Property(c => c.IsActive)
+                .HasColumnName("is_active")
+                .HasDefaultValue(true);
+
+            entity.Property(c => c.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(c => c.UpdatedAt)
+                .HasColumnName("updated_at")
+                .HasDefaultValueSql("NOW()");
+        });
 
         // --- AppUser table configuration ---
         modelBuilder.Entity<AppUser>(entity =>

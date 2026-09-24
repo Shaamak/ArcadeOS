@@ -1,10 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "6ArZ4OWKE7k=",
+  "dgSpecHash": "wSiK+8hR6iE=",
   "success": true,
   "projectFilePath": "D:\\projects_lat\\arcadeOS_net\\src\\ArcadeOS.Api\\ArcadeOS.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Shaamak\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
+    "C:\\Users\\Shaamak\\.nuget\\packages\\fluentvalidation\\11.9.2\\fluentvalidation.11.9.2.nupkg.sha512",
+    "C:\\Users\\Shaamak\\.nuget\\packages\\fluentvalidation.dependencyinjectionextensions\\11.9.2\\fluentvalidation.dependencyinjectionextensions.11.9.2.nupkg.sha512",
     "C:\\Users\\Shaamak\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Shaamak\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\8.0.8\\microsoft.aspnetcore.authentication.jwtbearer.8.0.8.nupkg.sha512",
     "C:\\Users\\Shaamak\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",

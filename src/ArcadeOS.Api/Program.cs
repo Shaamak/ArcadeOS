@@ -2,6 +2,7 @@ using System.Text;
 using ArcadeOS.Api.Application.Interfaces;
 using ArcadeOS.Api.Infrastructure.Auth;
 using ArcadeOS.Api.Infrastructure.Persistence;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -72,10 +73,11 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // --- Application Services ---
-// Register our TokenService as the implementation for ITokenService.
-// Any class that asks for ITokenService in its constructor will receive a TokenService instance.
-// Scoped lifetime: one instance per request (fine for stateless JWT operations).
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.ICustomerService, ArcadeOS.Api.Application.Services.CustomerService>();
+
+// --- FluentValidation ---
+builder.Services.AddValidatorsFromAssemblyContaining<ArcadeOS.Api.Application.Validators.CreateCustomerDtoValidator>();
 
 // --- CORS (Cross-Origin Resource Sharing) ---
 // The browser blocks JavaScript from calling an API on a different domain/port
@@ -98,8 +100,11 @@ var app = builder.Build();
 // PHASE 2 — Configure HTTP Middleware Pipeline
 // Requests flow TOP → BOTTOM through this pipeline.
 // Responses flow BOTTOM → TOP back up.
-// ORDER MATTERS: Auth must come before Authorization.
+// ORDER MATTERS: Exception middleware first, Auth before Authorization.
 // ============================================================
+
+// Centralized Exception Handling Middleware
+app.UseMiddleware<ArcadeOS.Api.Middleware.ExceptionMiddleware>();
 
 app.UseHttpsRedirection();
 

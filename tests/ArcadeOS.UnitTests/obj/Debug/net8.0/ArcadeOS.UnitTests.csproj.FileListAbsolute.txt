@@ -122,3 +122,6 @@ D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Npgsql.dl
 D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
 D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\obj\Debug\net8.0\ArcadeOS.UnitTests.sourcelink.json
+D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\FluentValidation.dll
+D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll
+D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.InMemory.dll
