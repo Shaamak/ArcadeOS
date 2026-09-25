@@ -75,6 +75,7 @@ builder.Services.AddAuthorization();
 // --- Application Services ---
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.ICustomerService, ArcadeOS.Api.Application.Services.CustomerService>();
+builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IWalletService, ArcadeOS.Api.Application.Services.WalletService>();
 
 // --- FluentValidation ---
 builder.Services.AddValidatorsFromAssemblyContaining<ArcadeOS.Api.Application.Validators.CreateCustomerDtoValidator>();

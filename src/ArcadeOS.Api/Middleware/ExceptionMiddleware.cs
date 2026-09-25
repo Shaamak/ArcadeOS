@@ -59,6 +59,12 @@ public class ExceptionMiddleware
                 message = conflictEx.Message;
                 break;
 
+            case InsufficientBalanceException balEx:
+                statusCode = HttpStatusCode.UnprocessableEntity; // 422
+                errorCode = "INSUFFICIENT_BALANCE";
+                message = balEx.Message;
+                break;
+
             default:
                 statusCode = HttpStatusCode.InternalServerError;
                 errorCode = "INTERNAL_SERVER_ERROR";
