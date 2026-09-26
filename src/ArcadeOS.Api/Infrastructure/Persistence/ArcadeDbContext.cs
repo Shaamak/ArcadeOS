@@ -31,6 +31,10 @@ public class ArcadeDbContext : DbContext
     // Transactions: the append-only financial ledger
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
+    // Machines & Heartbeats (IoT pattern)
+    public DbSet<Machine> Machines => Set<Machine>();
+    public DbSet<MachineHeartbeat> MachineHeartbeats => Set<MachineHeartbeat>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -232,6 +236,56 @@ public class ArcadeDbContext : DbContext
 
             // Index for fast retrieval of all transactions for a wallet
             entity.HasIndex(t => t.WalletId).HasDatabaseName("idx_transactions_wallet_id");
+        });
+
+        // --- Machine table configuration ---
+        modelBuilder.Entity<Machine>(entity =>
+        {
+            entity.ToTable("machines");
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Id).HasColumnName("id");
+            entity.Property(m => m.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
+            entity.Property(m => m.Model).HasColumnName("model").HasMaxLength(100);
+            entity.Property(m => m.SerialNumber).HasColumnName("serial_number").HasMaxLength(100);
+            entity.HasIndex(m => m.SerialNumber).IsUnique(); // Cannot have two machines with same serial
+            
+            entity.Property(m => m.CreditCost).HasColumnName("credit_cost").HasColumnType("numeric(6,2)").HasDefaultValue(1.0m);
+            entity.Property(m => m.TicketPayout).HasColumnName("ticket_payout").HasDefaultValue(0);
+            
+            entity.Property(m => m.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(m => m.QrCode).HasColumnName("qr_code").HasMaxLength(200);
+            entity.HasIndex(m => m.QrCode).IsUnique(); // QR code should be uniquely identifiable
+            
+            entity.Property(m => m.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(m => m.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+        });
+
+        // --- MachineHeartbeat table configuration ---
+        modelBuilder.Entity<MachineHeartbeat>(entity =>
+        {
+            entity.ToTable("machine_heartbeats");
+            entity.HasKey(h => h.Id);
+            entity.Property(h => h.Id).HasColumnName("id");
+            
+            entity.Property(h => h.MachineId).HasColumnName("machine_id");
+            entity.Property(h => h.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(h => h.CreditBalance).HasColumnName("credit_balance").HasColumnType("numeric(6,2)");
+            entity.Property(h => h.PlayCount).HasColumnName("play_count");
+            entity.Property(h => h.ErrorCode).HasColumnName("error_code").HasMaxLength(50);
+            
+            // PostgreSQL specific: JSONB column type for efficient JSON storage/querying
+            entity.Property(h => h.PayloadJson).HasColumnName("payload").HasColumnType("jsonb");
+            
+            entity.Property(h => h.ReceivedAt).HasColumnName("received_at").HasDefaultValueSql("NOW()");
+
+            // Relationships
+            entity.HasOne(h => h.Machine)
+                .WithMany(m => m.Heartbeats)
+                .HasForeignKey(h => h.MachineId)
+                .OnDelete(DeleteBehavior.Cascade); // Deleting a machine deletes its heartbeats (optional, depends on retention policy)
+
+            // Very important for time-series querying: composite index on MachineId + ReceivedAt DESC
+            entity.HasIndex(h => new { h.MachineId, h.ReceivedAt }).HasDatabaseName("idx_heartbeats_machine_received");
         });
 
         // --- Seed Data: create default admin and staff users ---
