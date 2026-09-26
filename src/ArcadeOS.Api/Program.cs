@@ -77,6 +77,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.ICustomerService, ArcadeOS.Api.Application.Services.CustomerService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IWalletService, ArcadeOS.Api.Application.Services.WalletService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IMachineService, ArcadeOS.Api.Application.Services.MachineService>();
+builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IGameplayService, ArcadeOS.Api.Application.Services.GameplayService>();
 
 // Register the background worker (runs as a singleton)
 builder.Services.AddHostedService<ArcadeOS.Api.Infrastructure.BackgroundJobs.MachineStatusMonitorService>();

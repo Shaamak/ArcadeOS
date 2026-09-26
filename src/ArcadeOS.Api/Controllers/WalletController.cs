@@ -62,6 +62,19 @@ public class WalletController : ControllerBase
     }
 
     /// <summary>
+    /// POST /api/wallet/refund
+    /// Refunds credits back to a customer wallet.
+    /// </summary>
+    [HttpPost("wallet/refund")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<ActionResult<TransactionDto>> Refund(
+        [FromBody] RefundRequestDto dto, CancellationToken ct)
+    {
+        var result = await _walletService.RefundAsync(dto, ct);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// GET /api/customers/{customerId}/transactions?page=1&pageSize=20&typeFilter=TopUp
     /// Returns paginated transaction history for a customer.
     /// </summary>

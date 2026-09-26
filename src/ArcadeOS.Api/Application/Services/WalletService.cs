@@ -226,6 +226,103 @@ public class WalletService : IWalletService
         throw new InvalidOperationException("Failed to complete Debit after multiple retries due to concurrency conflicts.");
     }
 
+    public async Task<TransactionDto> RefundAsync(RefundRequestDto dto, CancellationToken ct = default)
+    {
+        if (dto.Amount <= 0)
+            throw new ValidationException("Amount must be greater than zero.");
+
+        var existingTransaction = await _db.Transactions
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.ReferenceId == dto.ReferenceId, ct);
+
+        if (existingTransaction is not null)
+            return MapTransactionToDto(existingTransaction);
+
+        var wallet = await _db.Wallets
+            .FirstOrDefaultAsync(w => w.CustomerId == dto.CustomerId, ct);
+
+        if (wallet is null)
+            throw new NotFoundException($"Wallet for customer '{dto.CustomerId}' was not found.");
+
+        var balanceBefore = wallet.Balance;
+        var balanceAfter = balanceBefore + dto.Amount;
+
+        wallet.Balance = balanceAfter;
+        wallet.UpdatedAt = DateTime.UtcNow;
+
+        var transaction = new Transaction
+        {
+            Id = Guid.NewGuid(),
+            WalletId = wallet.Id,
+            Type = TransactionType.Refund,
+            Amount = dto.Amount,
+            BalanceBefore = balanceBefore,
+            BalanceAfter = balanceAfter,
+            ReferenceId = dto.ReferenceId,
+            Description = dto.Description,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _db.Transactions.Add(transaction);
+
+        const int maxRetries = 3;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+                return MapTransactionToDto(transaction);
+            }
+            catch (DbUpdateConcurrencyException ex) when (attempt < maxRetries - 1)
+            {
+                await ex.Entries.First().ReloadAsync(ct);
+                var refreshedWallet = (Wallet)ex.Entries.First().Entity;
+
+                balanceBefore = refreshedWallet.Balance;
+                balanceAfter = balanceBefore + dto.Amount;
+
+                refreshedWallet.Balance = balanceAfter;
+                refreshedWallet.UpdatedAt = DateTime.UtcNow;
+
+                transaction.BalanceBefore = balanceBefore;
+                transaction.BalanceAfter = balanceAfter;
+            }
+        }
+
+        throw new InvalidOperationException("Failed to complete Refund after multiple retries due to concurrency conflicts.");
+    }
+
+    public async Task AddTicketsAsync(Guid customerId, int tickets, CancellationToken ct = default)
+    {
+        if (tickets <= 0) return;
+
+        var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.CustomerId == customerId, ct);
+        if (wallet is null)
+            throw new NotFoundException($"Wallet for customer '{customerId}' was not found.");
+
+        wallet.TicketBalance += tickets;
+        wallet.UpdatedAt = DateTime.UtcNow;
+
+        const int maxRetries = 3;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+                return;
+            }
+            catch (DbUpdateConcurrencyException ex) when (attempt < maxRetries - 1)
+            {
+                await ex.Entries.First().ReloadAsync(ct);
+                var refreshedWallet = (Wallet)ex.Entries.First().Entity;
+                refreshedWallet.TicketBalance += tickets;
+                refreshedWallet.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        throw new InvalidOperationException("Failed to add tickets due to concurrency conflicts.");
+    }
+
     public async Task<PagedResultDto<TransactionDto>> GetTransactionsAsync(
         TransactionListQueryDto query, CancellationToken ct = default)
     {

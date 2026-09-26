@@ -18,6 +18,16 @@ public interface IWalletService
     /// Throws InsufficientBalanceException if balance would go negative.
     /// </summary>
     Task<TransactionDto> DebitAsync(DebitRequestDto dto, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Refunds credits back to a customer wallet. Idempotent via ReferenceId.
+    /// </summary>
+    Task<TransactionDto> RefundAsync(RefundRequestDto dto, CancellationToken ct = default);
+
+    /// <summary>
+    /// Adds tickets to a customer's wallet.
+    /// </summary>
+    Task AddTicketsAsync(Guid customerId, int tickets, CancellationToken ct = default);
 
     /// <summary>Gets paginated transaction history for a customer's wallet.</summary>
     Task<PagedResultDto<TransactionDto>> GetTransactionsAsync(TransactionListQueryDto query, CancellationToken ct = default);

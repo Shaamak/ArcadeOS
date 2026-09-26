@@ -38,6 +38,13 @@ public record DebitRequestDto(
     string? Description        // Optional note (e.g., "Played Pac-Man machine #3")
 );
 
+public record RefundRequestDto(
+    Guid CustomerId,
+    decimal Amount,
+    string ReferenceId,
+    string? Description
+);
+
 // --- Transaction DTOs ---
 
 public record TransactionDto(
