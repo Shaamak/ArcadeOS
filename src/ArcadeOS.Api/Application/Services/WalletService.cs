@@ -323,6 +323,44 @@ public class WalletService : IWalletService
         throw new InvalidOperationException("Failed to add tickets due to concurrency conflicts.");
     }
 
+    public async Task DeductTicketsAsync(Guid customerId, int tickets, CancellationToken ct = default)
+    {
+        if (tickets <= 0)
+            throw new ValidationException("Tickets to deduct must be greater than zero.");
+
+        var wallet = await _db.Wallets.FirstOrDefaultAsync(w => w.CustomerId == customerId, ct);
+        if (wallet is null)
+            throw new NotFoundException($"Wallet for customer '{customerId}' was not found.");
+
+        if (wallet.TicketBalance < tickets)
+            throw new ValidationException($"Insufficient ticket balance. Required: {tickets}, Available: {wallet.TicketBalance}");
+
+        wallet.TicketBalance -= tickets;
+        wallet.UpdatedAt = DateTime.UtcNow;
+
+        const int maxRetries = 3;
+        for (int attempt = 0; attempt < maxRetries; attempt++)
+        {
+            try
+            {
+                await _db.SaveChangesAsync(ct);
+                return;
+            }
+            catch (DbUpdateConcurrencyException ex) when (attempt < maxRetries - 1)
+            {
+                await ex.Entries.First().ReloadAsync(ct);
+                var refreshedWallet = (Wallet)ex.Entries.First().Entity;
+                if (refreshedWallet.TicketBalance < tickets)
+                    throw new ValidationException($"Insufficient ticket balance after concurrent update. Available: {refreshedWallet.TicketBalance}");
+
+                refreshedWallet.TicketBalance -= tickets;
+                refreshedWallet.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        throw new InvalidOperationException("Failed to deduct tickets due to concurrency conflicts.");
+    }
+
     public async Task<PagedResultDto<TransactionDto>> GetTransactionsAsync(
         TransactionListQueryDto query, CancellationToken ct = default)
     {

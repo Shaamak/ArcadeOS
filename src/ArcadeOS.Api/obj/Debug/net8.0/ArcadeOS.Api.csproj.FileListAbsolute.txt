@@ -109,3 +109,8 @@ D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\obj\Debug\net8.0\ArcadeOS.Api.sour
 D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\obj\Debug\net8.0\ArcadeOS.6ED4FAA6.Up2Date
 D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\bin\Debug\net8.0\FluentValidation.dll
 D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll
+D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\obj\Debug\net8.0\ArcadeOS.Api.MvcApplicationPartsAssemblyInfo.cs
+D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\bin\Debug\net8.0\Microsoft.OpenApi.dll
+D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\projects_lat\arcadeOS_net\src\ArcadeOS.Api\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll

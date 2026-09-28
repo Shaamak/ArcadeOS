@@ -1,6 +1,7 @@
 using System.Text;
 using ArcadeOS.Api.Application.Interfaces;
 using ArcadeOS.Api.Infrastructure.Auth;
+using ArcadeOS.Api.Infrastructure.Hubs;
 using ArcadeOS.Api.Infrastructure.Persistence;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,10 +12,6 @@ using Microsoft.IdentityModel.Tokens;
 // PROGRAM.CS — The entry point and composition root.
 // This is where we "wire up" all services (the DI container)
 // and configure the HTTP middleware pipeline.
-//
-// Think of it in two phases:
-//   Phase 1 (builder.*): Register services — "what can the app do?"
-//   Phase 2 (app.*):     Configure pipeline — "in what order does the app process requests?"
 // ============================================================
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,35 +20,28 @@ var builder = WebApplication.CreateBuilder(args);
 // PHASE 1 — Register Services (Dependency Injection Container)
 // ============================================================
 
-// --- Controllers ---
-// Tells the framework to discover all classes inheriting from ControllerBase
-// and automatically route HTTP requests to them.
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
-// --- Database (Entity Framework Core + PostgreSQL) ---
-// We register ArcadeDbContext as a Scoped service.
-// Scoped = one instance per HTTP request. This is correct for DbContext because:
-//   - It tracks changes within a single request/transaction.
-//   - Two concurrent requests get SEPARATE DbContext instances (no data leaks).
+// OpenAPI / Swagger Documentation Setup
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// Database (Entity Framework Core + PostgreSQL)
 builder.Services.AddDbContext<ArcadeDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- JWT Authentication ---
-// This registers the authentication middleware and tells it to validate
-// incoming Bearer tokens (JWT) on every request that has [Authorize].
+// JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Jwt:Key is not configured.");
 
 builder.Services.AddAuthentication(options =>
 {
-    // Set JWT Bearer as the default scheme — every [Authorize] attribute will use it.
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
-    // These parameters MUST match what TokenService used when CREATING the token.
-    // If any of these don't match, the token is rejected with 401 Unauthorized.
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -63,40 +53,40 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
 
-        ValidateLifetime = true,  // Reject expired tokens
-        ClockSkew = TimeSpan.Zero // No tolerance for expiry (default is 5 min — we disable it)
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero
     };
 });
 
-// Role-based authorization requires this. It reads the Role claim from the JWT
-// and enforces [Authorize(Roles = "Admin")] etc.
 builder.Services.AddAuthorization();
 
-// --- Application Services ---
+// Application Services
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.ICustomerService, ArcadeOS.Api.Application.Services.CustomerService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IWalletService, ArcadeOS.Api.Application.Services.WalletService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IMachineService, ArcadeOS.Api.Application.Services.MachineService>();
 builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IGameplayService, ArcadeOS.Api.Application.Services.GameplayService>();
+builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IMembershipService, ArcadeOS.Api.Application.Services.MembershipService>();
+builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IRewardService, ArcadeOS.Api.Application.Services.RewardService>();
+builder.Services.AddScoped<ArcadeOS.Api.Application.Interfaces.IAnalyticsService, ArcadeOS.Api.Application.Services.AnalyticsService>();
 
-// Register the background worker (runs as a singleton)
+// Register background workers
 builder.Services.AddHostedService<ArcadeOS.Api.Infrastructure.BackgroundJobs.MachineStatusMonitorService>();
+builder.Services.AddHostedService<ArcadeOS.Api.Infrastructure.BackgroundJobs.MembershipExpirationService>();
 
-// --- FluentValidation ---
+// FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<ArcadeOS.Api.Application.Validators.CreateCustomerDtoValidator>();
 
-// --- CORS (Cross-Origin Resource Sharing) ---
-// The browser blocks JavaScript from calling an API on a different domain/port
-// by default. We need to explicitly allow our Angular app (running on :4200)
-// to call our API (running on :5000/7000).
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngularDev", policy =>
     {
         policy
-            .WithOrigins("http://localhost:4200")  // Angular dev server
+            .WithOrigins("http://localhost:4200")
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials(); // SignalR needs credentials for WebSockets
     });
 });
 
@@ -104,28 +94,26 @@ var app = builder.Build();
 
 // ============================================================
 // PHASE 2 — Configure HTTP Middleware Pipeline
-// Requests flow TOP → BOTTOM through this pipeline.
-// Responses flow BOTTOM → TOP back up.
-// ORDER MATTERS: Exception middleware first, Auth before Authorization.
 // ============================================================
 
-// Centralized Exception Handling Middleware
 app.UseMiddleware<ArcadeOS.Api.Middleware.ExceptionMiddleware>();
 
-app.UseHttpsRedirection();
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ArcadeOS API v1");
+    });
+}
 
-// Allow Angular app to call our API during development
+app.UseHttpsRedirection();
 app.UseCors("AllowAngularDev");
 
-// Reads the JWT from the "Authorization: Bearer <token>" header and
-// populates HttpContext.User with claims extracted from the token.
 app.UseAuthentication();
-
-// Checks if the authenticated user has the required roles/policies
-// for the requested endpoint (e.g. [Authorize(Roles = "Admin")]).
 app.UseAuthorization();
 
-// Routes incoming HTTP requests to the correct Controller/Action method.
 app.MapControllers();
+app.MapHub<ArcadeHub>("/hubs/arcade");
 
 app.Run();

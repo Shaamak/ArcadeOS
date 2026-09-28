@@ -35,6 +35,12 @@ public class ArcadeDbContext : DbContext
     public DbSet<Machine> Machines => Set<Machine>();
     public DbSet<MachineHeartbeat> MachineHeartbeats => Set<MachineHeartbeat>();
 
+    // Memberships & Rewards
+    public DbSet<MembershipPlan> MembershipPlans => Set<MembershipPlan>();
+    public DbSet<Membership> Memberships => Set<Membership>();
+    public DbSet<RewardItem> RewardItems => Set<RewardItem>();
+    public DbSet<Redemption> Redemptions => Set<Redemption>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -286,6 +292,103 @@ public class ArcadeDbContext : DbContext
 
             // Very important for time-series querying: composite index on MachineId + ReceivedAt DESC
             entity.HasIndex(h => new { h.MachineId, h.ReceivedAt }).HasDatabaseName("idx_heartbeats_machine_received");
+        });
+
+        // --- MembershipPlan table configuration ---
+        modelBuilder.Entity<MembershipPlan>(entity =>
+        {
+            entity.ToTable("membership_plans");
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Id).HasColumnName("id");
+            entity.Property(p => p.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
+            entity.Property(p => p.Description).HasColumnName("description").HasMaxLength(500);
+            entity.Property(p => p.MonthlyFee).HasColumnName("monthly_fee").HasColumnType("numeric(10,2)").IsRequired();
+            entity.Property(p => p.DailyBonusTickets).HasColumnName("daily_bonus_tickets").HasDefaultValue(0);
+            entity.Property(p => p.GameplayDiscountPercent).HasColumnName("gameplay_discount_percent").HasColumnType("numeric(5,2)").HasDefaultValue(0m);
+            entity.Property(p => p.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+            entity.Property(p => p.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+        });
+
+        // --- Membership table configuration ---
+        modelBuilder.Entity<Membership>(entity =>
+        {
+            entity.ToTable("memberships");
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Id).HasColumnName("id");
+            entity.Property(m => m.CustomerId).HasColumnName("customer_id").IsRequired();
+            entity.Property(m => m.PlanId).HasColumnName("plan_id").IsRequired();
+            entity.Property(m => m.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(m => m.StartDate).HasColumnName("start_date").IsRequired();
+            entity.Property(m => m.EndDate).HasColumnName("end_date").IsRequired();
+            entity.Property(m => m.AutoRenew).HasColumnName("auto_renew").HasDefaultValue(true);
+            entity.Property(m => m.LastBonusClaimedAt).HasColumnName("last_bonus_claimed_at");
+            entity.Property(m => m.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+            entity.Property(m => m.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()");
+
+            entity.HasOne(m => m.Customer)
+                .WithMany()
+                .HasForeignKey(m => m.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(m => m.Plan)
+                .WithMany()
+                .HasForeignKey(m => m.PlanId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(m => m.CustomerId);
+        });
+
+        // --- RewardItem table configuration ---
+        modelBuilder.Entity<RewardItem>(entity =>
+        {
+            entity.ToTable("reward_items");
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Id).HasColumnName("id");
+            entity.Property(r => r.Name).HasColumnName("name").HasMaxLength(100).IsRequired();
+            entity.Property(r => r.Description).HasColumnName("description").HasMaxLength(500);
+            entity.Property(r => r.TicketCost).HasColumnName("ticket_cost").IsRequired();
+            entity.Property(r => r.StockQuantity).HasColumnName("stock_quantity").IsRequired();
+            entity.Property(r => r.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+
+            // Optimistic concurrency token via PostgreSQL xmin system column
+            entity.Property(r => r.RowVersion)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .IsRowVersion()
+                .ValueGeneratedOnAddOrUpdate();
+
+            entity.Property(r => r.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+            entity.Property(r => r.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("NOW()");
+        });
+
+        // --- Redemption table configuration ---
+        modelBuilder.Entity<Redemption>(entity =>
+        {
+            entity.ToTable("redemptions");
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Id).HasColumnName("id");
+            entity.Property(r => r.CustomerId).HasColumnName("customer_id").IsRequired();
+            entity.Property(r => r.RewardItemId).HasColumnName("reward_item_id").IsRequired();
+            entity.Property(r => r.TicketsSpent).HasColumnName("tickets_spent").IsRequired();
+            entity.Property(r => r.Status).HasColumnName("status").HasConversion<string>().HasMaxLength(20).IsRequired();
+            
+            entity.Property(r => r.ReferenceId).HasColumnName("reference_id").HasMaxLength(100);
+            entity.HasIndex(r => r.ReferenceId).IsUnique().HasFilter("reference_id IS NOT NULL");
+
+            entity.Property(r => r.RedeemedAtUtc).HasColumnName("redeemed_at_utc").HasDefaultValueSql("NOW()");
+            entity.Property(r => r.ClaimedAtUtc).HasColumnName("claimed_at_utc");
+
+            entity.HasOne(r => r.Customer)
+                .WithMany()
+                .HasForeignKey(r => r.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(r => r.RewardItem)
+                .WithMany()
+                .HasForeignKey(r => r.RewardItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(r => r.CustomerId);
         });
 
         // --- Seed Data: create default admin and staff users ---

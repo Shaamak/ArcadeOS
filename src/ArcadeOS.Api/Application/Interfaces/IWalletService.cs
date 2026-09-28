@@ -29,6 +29,11 @@ public interface IWalletService
     /// </summary>
     Task AddTicketsAsync(Guid customerId, int tickets, CancellationToken ct = default);
 
+    /// <summary>
+    /// Deducts tickets from a customer's wallet. Throws ValidationException if tickets are insufficient.
+    /// </summary>
+    Task DeductTicketsAsync(Guid customerId, int tickets, CancellationToken ct = default);
+
     /// <summary>Gets paginated transaction history for a customer's wallet.</summary>
     Task<PagedResultDto<TransactionDto>> GetTransactionsAsync(TransactionListQueryDto query, CancellationToken ct = default);
 }

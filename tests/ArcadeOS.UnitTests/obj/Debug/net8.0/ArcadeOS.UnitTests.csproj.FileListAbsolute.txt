@@ -125,3 +125,7 @@ D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\obj\Debug\net8.0\ArcadeOS.
 D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\FluentValidation.dll
 D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll
 D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.InMemory.dll
+D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Microsoft.OpenApi.dll
+D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Swashbuckle.AspNetCore.Swagger.dll
+D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\projects_lat\arcadeOS_net\tests\ArcadeOS.UnitTests\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
